@@ -16,6 +16,6 @@ const PembelianSchema = mongoose.Schema({
         type: Number,
         required: true
     }
-})
+},{ collection : 'pembelians'})
 
 module.exports = mongoose.model('Pembelian', PembelianSchema)

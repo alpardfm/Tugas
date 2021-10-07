@@ -20,12 +20,12 @@ const ProdukSchema = mongoose.Schema({
     totalHarga : {
         type: Number
     },
-    distributor : [
-        {
+    distributor :{
             type: ObjectID,
-            ref: "Distributors"
-        },
-    ]
-})
+            ref: "Distributors",
+            
+    }
+},{ collection : 'produks'}
+)
 
 module.exports = mongoose.model('Produk', ProdukSchema)

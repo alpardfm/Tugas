@@ -5,6 +5,6 @@ const DistributorSchema = mongoose.Schema({
         type: String,
         required: true
     }
-})
+},{collection : 'distributors'})
 
 module.exports = mongoose.model('Distributor', DistributorSchema)
