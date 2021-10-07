@@ -6,6 +6,7 @@ const cors = require('cors')
 //Include
 require('dotenv/config')
 require('./config/db.config')
+require('./config/doc.config')
 
 //Middleware
 app.use(bodyParser())

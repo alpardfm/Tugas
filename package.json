@@ -23,6 +23,7 @@
     "mongo": "^0.1.0",
     "mongod": "^2.0.0",
     "mongoose": "^6.0.9",
-    "nodemon": "^2.0.13"
+    "nodemon": "^2.0.13",
+    "swagger-ui-express": "^4.1.6"
   }
 }
