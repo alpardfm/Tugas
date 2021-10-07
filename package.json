@@ -1,0 +1,27 @@
+{
+  "name": "rest-api-kelola-produk",
+  "version": "0.0.1",
+  "description": "restful api kelola produk",
+  "main": "app.js",
+  "scripts": {
+    "dev": "nodemon app.js"
+  },
+  "keywords": [
+    "rest",
+    "express",
+    "mongodb",
+    "produk"
+  ],
+  "author": "Alpardfm",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "cors": "^2.8.5",
+    "dotenv": "^10.0.0",
+    "express": "^4.17.1",
+    "mongo": "^0.1.0",
+    "mongod": "^2.0.0",
+    "mongoose": "^6.0.9",
+    "nodemon": "^2.0.13"
+  }
+}
