@@ -1,8 +1,8 @@
 module.exports = {
     swaggerDefinition:{
     info: {
-      title: "API Produk", // short title.
-      description: "untuk olah data produk", //  desc.
+      title: "Documentation API", // short title.
+      description: "dokumentasi untuk api kelola produk", //  desc.
       version: "0.0.1", // version number
       contact: {
         name: "Alpardfm", // your name
