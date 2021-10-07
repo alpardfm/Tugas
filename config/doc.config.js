@@ -1,5 +1,5 @@
 module.exports = {
-    openapi: "3.0.3", // present supported openapi version
+    swaggerDefinition:{
     info: {
       title: "Simple Todos API", // short title.
       description: "A simple todos API", //  desc.
@@ -9,5 +9,8 @@ module.exports = {
         email: "john@web.com", // your email
         url: "web.com", // your website
       },
-    },
-  };
+      server: ["http://localhost:3003"]
+    }
+  },
+  apis: ["app.js"]
+};
