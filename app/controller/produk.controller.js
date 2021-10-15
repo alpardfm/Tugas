@@ -1,24 +1,28 @@
 const express = require('express')
 const router = express.Router()
 const Produk = require('../models/produk.model')
-const Distributor = require('../models/distributor.model')
 
 router.post('/', async (req, res) => {
-    const datas = new Produk({
+
+    const Task = new Produk({
         nama: req.body.nama,
         stok: 0,
-        harga: 0,
-        totalProduk : 0,
-        totalHarga : 0,
-        distributor: req.body.distributor
+        hargaBeli: 0,
+        hargaJual: 0,
+        laba: req.body.laba,
+        createAt: Date.now()
     })
 
     try {
-        const data = await datas.save()
+        const data = await Task.save()
         res.status(200).json({
             status: res.statusCode,
             message: 'Berhasil Menambah Data',
-            data
+            data: {
+                _id: data._id,
+                nama: data.nama,
+                laba: data.laba
+            }
         })
 
     } catch (err) {
@@ -33,13 +37,58 @@ router.post('/', async (req, res) => {
 
 
 router.get('/', async (req, res) => {
+
     try {
-        const data = await Produk.find({})
+
+        //Sorting
+        const sortBy = req.query.sortBy
+        const orderBy = req.query.orderBy
+
+        //Filter Stok---------------------------------------------
+        const filters = {}
+        const match = {}
+
+        //Filtering Stok Kurang Dari
+        if (req.query.kurang) {
+            match.$lte = req.query.kurang
+        }
+
+        //Filtering Stok Lebih Dari
+        if (req.query.lebih) {
+            match.$gte = req.query.lebih
+        }
+
+        //Rumus Filter
+        if (req.query.kurang || req.query.lebih) {
+            filters.stok = match
+        }
+
+        //-----------------------------------------------------------
+
+        //Searching-----------------------------------
+        const search = {}
+        const searchs = {}
+
+        if (req.query.search) {
+            search.$regex = req.query.search
+            searchs.nama = search
+        }
+        //--------------------------------------------
+
+        const data = await Produk.find({ $and: [searchs, filters, { statusDelete: false }] })
+            .select("nama stok hargaJual")
+            .limit(parseInt(req.query.limit) || {})
+            .skip(parseInt(req.query.skip) || {})
+            .sort([[sortBy, parseInt(orderBy)]])
+
         res.status(200).json({
             status: res.statusCode,
             message: 'Berhasil Menampilkan Data',
             data
         })
+
+
+
     } catch (err) {
         res.status(400).json({
             status: res.statusCode,
@@ -69,16 +118,17 @@ router.get('/:id', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
     try {
-        const data = await Produk.updateOne({ _id: req.params.id }, {
+         await Produk.updateOne({ _id: req.params.id }, {
             nama: req.body.nama,
             stok: 0,
-            harga: 0,
-            distributor: req.body.distributor
+            hargaBeli: 0,
+            hargaJual: 0,
+            laba: req.body.laba,
+            updateAt: Date.now()
         })
         res.status(200).json({
             status: res.statusCode,
             message: 'Berhasil Mengupdate Data',
-            data
         })
     } catch (err) {
         res.status(400).json({
@@ -88,14 +138,16 @@ router.put('/:id', async (req, res) => {
     }
 })
 
-//DELETE BERITA
+
 router.delete('/:id', async (req, res) => {
     try {
-        const data = await Produk.deleteOne({_id: req.params.id})
+         await Produk.updateOne({ _id: req.params.id }, {
+            statusDelete: true,
+            deleteAt: Date.now()
+        })
         res.status(200).json({
             status: res.statusCode,
-            message: 'Berhasil Menghapus Data',
-            data
+            message: 'Berhasil Menghapus Data'
         })
     } catch (err) {
         res.status(200).json({

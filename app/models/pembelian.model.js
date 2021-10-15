@@ -2,19 +2,43 @@ const mongoose = require('mongoose')
 const ObjectID = mongoose.Schema.Types.ObjectId;
 
 const PembelianSchema = mongoose.Schema({
-    nama : [
-        {
+    produk : {
             type: ObjectID,
-            ref: "Produks"
-        }
-    ],
-    stok : {
+            ref: "Produk",
+            required : true
+        },
+    jumlah : {
         type: Number,
         required: true
     },
-    harga : {
+    hargaBeli : {
         type: Number,
         required: true
+    },
+    tanggal : {
+        type: Date
+    },
+    distributor:{
+        type: ObjectID,
+        ref: "Distributor",
+        required: true
+    },
+    createAt: {
+        type: Date
+    },
+    updateAt: {
+        type: Date
+    },
+    deleteAt: {
+        type: Date
+    },
+    statusDelete :{
+        type : Boolean,
+        default : false
+    },
+    statusEdit: {
+        type: Boolean,
+        default : false
     }
 },{ collection : 'pembelians'})
 

@@ -1,62 +1,86 @@
 const express = require('express')
 const router = express.Router()
 const Produk = require('../models/produk.model')
+const Distributor = require('../models/distributor.model')
 const Pembelian = require('../models/pembelian.model')
+const {
+    updateOne
+} = require('../models/produk.model')
 
 router.post('/', async (req, res) => {
     const datas = new Pembelian({
-        nama: req.body.nama,
-        stok: req.body.stok,
-        harga: req.body.harga
+        produk: req.body.produk,
+        jumlah: req.body.jumlah,
+        hargaBeli: req.body.hargaBeli,
+        distributor: req.body.distributor,
+        tanggal: Date.now(),
+        createAt: Date.now()
     })
 
 
     try {
 
+        //Cek Produk
+        const produks = await Produk.findOne({
+            _id: req.body.produk
+        })
+        if (!produks) {
+            res.status(401).json({
+                status: res.statusCode,
+                message: "Produk Tidak Ditemukan"
+            })
+        }
+
+        //Cek Distributor
+        const distributors = await Distributor.findOne({
+            _id: req.body.distributor
+        })
+        if (!distributors) {
+            res.status(402).json({
+                status: res.statusCode,
+                message: "Distributor Tidak Ditemukan"
+            })
+        }
+
         const data = await datas.save()
-        const BH = datas.harga
-        const BS = datas.stok
 
-        //Mengambil total pembelian lama
-         const total = await Produk.findOne({ _id : req.body.nama})
+        //-----------------------------------------------
+        const hargaBeliLama = parseInt(produks.hargaBeli)
+        const jumlahStokLama = parseInt(produks.stok)
+        const labaProduks = parseInt(produks.laba)
+        const hargaBeliBaru = parseInt(datas.hargaBeli)
+        const jumlahStokBaru = parseInt(datas.jumlah)
 
-         const AH = total.totalHarga
-         const AS = total.totalProduk
+        //Rumus
+        const hppLama = hargaBeliLama * jumlahStokLama
+        const hppBaru = hargaBeliBaru * jumlahStokBaru
+        const jumlahStok = jumlahStokBaru + jumlahStokLama
 
-         const TH = BH * BS + AH
-         const TP = BS + AS
-
-
-
-         //Mengupdate total pembelian baru
-         const datax = await Produk.updateOne({ _id: req.body.nama }, {
-            totalHarga: TH,
-            totalProduk: TP,
-          })
+        //Rumus
+        const hpp = (hppLama + hppBaru) / jumlahStok
+        const hargaJualBaru = hpp + labaProduks
 
 
-        //Mengambil total pembelian baru
-        const total2 = await Produk.findOne({ _id : req.body.nama})
-
-        const AH2 = total2.totalHarga
-        const AS2 = total2.totalProduk
-        const S = total2.stok
-
-        //  //Menentukan harga baru produk
-        const hargaBaru = AH2 / AS2
-        const stokBaru = S + BS
-       
-
-        // // //Mengupdate Stok dan Harga Terbaru
-          await Produk.updateOne({ _id : req.body.nama},{
-              harga : hargaBaru,
-              stok : stokBaru
-          })
+        await Produk.updateOne({
+            _id: req.body.produk
+        }, {
+            stok: jumlahStok,
+            hargaBeli: hargaBeliBaru,
+            hargaJual: hargaJualBaru,
+            updateAt: Date.now()
+        })
 
         res.status(200).json({
             status: res.statusCode,
             message: 'Berhasil Menambah Data',
-            data
+            data: {
+                _id: data._id,
+                produk: data.produk,
+                jumlah: data.jumlah,
+                hargaBeli: data.hargaBeli,
+                totalHarga: hppBaru,
+                distributor: data.distributor
+            }
         })
 
     } catch (err) {
@@ -73,7 +97,50 @@ router.post('/', async (req, res) => {
 
 router.get('/', async (req, res) => {
     try {
-        const data = await Pembelian.find({})
+
+        //Sorting
+        const sortBy = req.query.sortBy
+        const orderBy = req.query.orderBy
+
+        //Filter Barang & Tanggal---------------------------------------------
+        const filters = {}
+        const match = {}
+
+        //Filtering Tanggal
+        if (req.query.tanggal) {
+            match.tanggal = req.query.tanggal
+        }
+
+        //Filtering Produk
+        if (req.query.produk) {
+            match.produk = req.query.produk
+        }
+        //-----------------------------------------------------------
+
+        //  //Searching-----------------------------------
+        //  const search = {}
+        //  const searchs = {}
+
+        //  if (req.query.search) {
+        //      search.$regex = req.query.search
+        //      searchs.produk = search
+        //  }
+        //--------------------------------------------
+
+        const data = await Pembelian.find({
+                $and: [match, {
+                    statusDelete: false
+                }]
+            })
+            .select("tanggal produk jumlah hargaBeli distributor statusEdit")
+            .populate("produk", "nama")
+            .populate("distributor", "nama")
+            .limit(parseInt(req.query.limit) || {})
+            .skip(parseInt(req.query.skip) || {})
+            .sort([
+                [sortBy, parseInt(orderBy)]
+            ])
+
         res.status(200).json({
             status: res.statusCode,
             message: 'Berhasil Menampilkan Data',
@@ -90,7 +157,10 @@ router.get('/', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
     try {
-        const data = await Pembelian.findOne({ _id: req.params.id })
+        const data = await Pembelian.findOne({_id: req.params.id})
+        .populate("produk", "nama")
+        .populate("distributor", "nama")
+
         res.status(200).json({
             status: res.statusCode,
             message: 'Berhasil Menampilkan Data',
@@ -105,19 +175,58 @@ router.get('/:id', async (req, res) => {
 })
 
 
-
+//Update Pembelian
 router.put('/:id', async (req, res) => {
     try {
-        const data = await Pembelian.updateOne({ _id: req.params.id }, {
-            nama: req.body.nama,
-            stok: req.body.stok,
-            harga: req.body.harga
+
+        //CekStatus
+        const pembelians = await Pembelian.findOne({
+            _id: req.params.id
         })
-        res.status(200).json({
-            status: res.statusCode,
-            message: 'Berhasil Mengupdate Data',
-            data
-        })
+        if (pembelians.statusEdit == false) {
+            res.status(403).json({
+                status: res.statusCode,
+                message: "Maaf Data Tidak Bisa Di Edit Atau Dihapus Harap Hubungi Developer"
+            })
+        } else {
+
+            //Cek Produk
+            const produks = await Produk.findOne({
+                _id: req.body.produk
+            })
+            if (!produks) {
+                res.status(401).json({
+                    status: res.statusCode,
+                    message: "Produk Tidak Ditemukan"
+                })
+            } else {
+
+                //Cek Distributor
+                const distributors = await Distributor.findOne({
+                    _id: req.body.distributor
+                })
+                if (!distributors) {
+                    res.status(402).json({
+                        status: res.statusCode,
+                        message: "Distributor Tidak Ditemukan"
+                    })
+                } else {
+
+                    await Pembelian.updateOne({_id: req.params.id}, {
+                        produk: req.body.produk,
+                        jumlah: req.body.jumlah,
+                        hargaBeli: req.body.hargaBeli,
+                        distributor: req.body.distributor,
+                        updateAt: Date.now()
+                    })
+
+                    res.status(200).json({
+                        status: res.statusCode,
+                        message: 'Berhasil Mengupdate Data'
+                    })
+                }
+            }
+        }
     } catch (err) {
         res.status(400).json({
             status: res.statusCode,
@@ -126,15 +235,34 @@ router.put('/:id', async (req, res) => {
     }
 })
 
-//DELETE BERITA
+//DELETE Pembelian
 router.delete('/:id', async (req, res) => {
     try {
-        const data = await Pembelian.deleteOne({_id: req.params.id})
-        res.status(200).json({
-            status: res.statusCode,
-            message: 'Berhasil Menghapus Data',
-            data
+
+        //CekStatus
+        const pembelians = await Pembelian.findOne({
+            _id: req.params.id
         })
+        if (pembelians.statusEdit == false) {
+            res.status(403).json({
+                status: res.statusCode,
+                message: "Maaf Data Tidak Bisa Di Edit Atau Dihapus Harap Hubungi Developer"
+            })
+        } else {
+            
+            await Pembelian.updateOne({
+                _id: req.params.id
+            }, {
+                statusDelete: true,
+                deleteAt: Date.now()
+            })
+            res.status(200).json({
+                status: res.statusCode,
+                message: 'Berhasil Menghapus Data'
+            })
+        }
+
+
     } catch (err) {
         res.status(200).json({
             status: res.statusCode,

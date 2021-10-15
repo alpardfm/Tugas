@@ -7,12 +7,14 @@ const swaggerUi = require('swagger-ui-express')
 
 //Include
 require('dotenv/config')
-require('./config/db.config')
+require('./config/db.config') 
+const auth =  require('./config/auth.config')
 
 
 //Middleware
 app.use(bodyParser())
 app.use(cors())
+
 
 
 //import Dokumentasi
@@ -28,6 +30,7 @@ const pembelian = require('./app/controller/pembelian.controller')
 app.use('/api-docs/', swaggerUi.serve, swaggerUi.setup(swaggerDocs))
 
 //routes
+app.use(auth)
 app.use('/produk', produk)
 app.use('/distributor', distributor)
 app.use('/pembelian', pembelian)

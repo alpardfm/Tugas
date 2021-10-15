@@ -1,5 +1,4 @@
 const mongoose = require('mongoose')
-const ObjectID = mongoose.Schema.Types.ObjectId;
 
 const ProdukSchema = mongoose.Schema({
     nama : {
@@ -8,24 +7,33 @@ const ProdukSchema = mongoose.Schema({
     },
     stok : {
         type: Number,
-        required: true
+        required: true,
     },
-    harga : {
+    hargaBeli : {
         type: Number,
         required: true
     },
-    totalProduk : {
+    hargaJual : {
         type: Number
     },
-    totalHarga : {
+    laba : {
         type: Number
     },
-    distributor :{
-            type: ObjectID,
-            ref: "Distributors",
-            
+    createAt: {
+        type: Date
+    },
+    updateAt: {
+        type: Date
+    },
+    deleteAt: {
+        type: Date
+    },
+    statusDelete:{
+        type: Boolean,
+        default : false
     }
 },{ collection : 'produks'}
 )
+
 
 module.exports = mongoose.model('Produk', ProdukSchema)

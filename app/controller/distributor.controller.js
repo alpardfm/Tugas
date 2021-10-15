@@ -4,7 +4,8 @@ const Distributor = require('../models/distributor.model')
 
 router.post('/', async (req, res) => {
     const datas = new Distributor({
-        nama: req.body.nama
+        nama: req.body.nama,
+        createAt: Date.now()
     })
 
     try {
@@ -12,7 +13,10 @@ router.post('/', async (req, res) => {
         res.status(200).json({
             status: res.statusCode,
             message: 'Berhasil Menambah Data',
-            data
+            data: {
+                _id: data._id,
+                nama: data.nama
+            }
         })
 
     } catch (err) {
@@ -28,7 +32,33 @@ router.post('/', async (req, res) => {
 
 router.get('/', async (req, res) => {
     try {
-        const data = await Distributor.find({})
+
+        //Sorting
+        const sortBy = req.query.sortBy
+        const orderBy = req.query.orderBy
+
+        //Searching-----------------------------------
+        const search = {}
+        const searchs = {}
+
+        if (req.query.search) {
+            search.$regex = req.query.search
+            searchs.nama = search
+        }
+        //--------------------------------------------
+
+        const data = await Distributor.find({
+                $and: [searchs, {
+                    statusDelete: false
+                }]
+            })
+            .select("nama")
+            .limit(parseInt(req.query.limit) || {})
+            .skip(parseInt(req.query.skip) || {})
+            .sort([
+                [sortBy, parseInt(orderBy)]
+            ])
+
         res.status(200).json({
             status: res.statusCode,
             message: 'Berhasil Menampilkan Data',
@@ -45,7 +75,9 @@ router.get('/', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
     try {
-        const data = await Distributor.findOne({ _id: req.params.id })
+        const data = await Distributor.findOne({
+            _id: req.params.id
+        })
         res.status(200).json({
             status: res.statusCode,
             message: 'Berhasil Menampilkan Data',
@@ -63,14 +95,19 @@ router.get('/:id', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
     try {
-        const data = await Distributor.updateOne({ _id: req.params.id }, {
-            nama: req.body.nama
+
+        await Distributor.updateOne({
+            _id: req.params.id
+        }, {
+            nama: req.body.nama,
+            updateAt: Date.now()
         })
+
         res.status(200).json({
             status: res.statusCode,
-            message: 'Berhasil Mengupdate Data',
-            data
+            message: 'Berhasil Mengupdate Data'
         })
+
     } catch (err) {
         res.status(400).json({
             status: res.statusCode,
@@ -79,17 +116,24 @@ router.put('/:id', async (req, res) => {
     }
 })
 
-//DELETE BERITA
+
 router.delete('/:id', async (req, res) => {
     try {
-        const data = await Distributor.deleteOne({_id: req.params.id})
+
+        await Distributor.updateOne({
+            _id: req.params.id
+        }, {
+            statusDelete: true,
+            deleteAt: Date.now()
+        })
+
         res.status(200).json({
             status: res.statusCode,
-            message: 'Berhasil Menghapus Data',
-            data
+            message: 'Berhasil Menghapus Data'
         })
+
     } catch (err) {
-        res.status(200).json({
+        res.status(400).json({
             status: res.statusCode,
             message: err,
         })
